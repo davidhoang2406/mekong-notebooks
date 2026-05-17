@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# Jupyter checkpoints and temp artifacts
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# Local Parquet/data artifacts
+*.parquet
+*.avro
+
+# Secrets
+.env

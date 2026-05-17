@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.nbstripout]
+extra_keys = "metadata.kernelspec metadata.language_info"
