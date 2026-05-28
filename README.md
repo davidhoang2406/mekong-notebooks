@@ -1,26 +1,39 @@
 # mekong-notebooks
 
 JupyterLab notebooks for exploring and reporting on Mekong market data.
+**Read-only consumer** of MinIO — notebooks never write back to production
+buckets.
 
-## Structure
+## Layout
 
 ```
 notebooks/
-  exploration/   # ad-hoc data exploration (Avro, raw snapshots)
-  reporting/     # structured analysis (Parquet OHLCV, indicators)
-  onboarding/    # walkthroughs for new team members
+  exploration/   # ad-hoc data exploration (Avro snapshots, recent ticks)
+  reporting/     # structured analysis (Parquet OHLCV, indicators, screener)
+  onboarding/    # walkthroughs for new contributors
 model/
-  minio_store.py # read-only MinIO wrapper
-  spark.py       # SparkSession factory (S3A/MinIO pre-wired)
-docker/
-  jupyter.Dockerfile
+  minio_store.py # MinIO read wrapper
+  spark.py       # SparkSession factory (S3A/MinIO pre-wired, local[*] mode)
+Dockerfile       # Jupyter image (built by CI)
 ```
 
-## Quick start
+## Run inside the K8s cluster
+
+Once `mekong-infra` is deployed, JupyterLab is reachable at:
+
+```
+http://jupyter.mekong.local
+```
+
+The pod definition lives in `mekong-infra/k8s/mekong-dev/jupyter-deployment.yaml`.
+It mounts the notebooks directory and has MinIO credentials wired in via
+the `minio-credentials` secret.
+
+## Run standalone (local Docker)
 
 ```bash
-cp .env.example .env          # adjust if not using default Docker stack
-docker build -f docker/jupyter.Dockerfile -t mekong-notebooks .
+cp .env.example .env          # adjust if not pointing at the K8s stack
+docker build -t mekong-notebooks .
 docker run --rm -p 8888:8888 \
   --env-file .env \
   -v $(pwd)/notebooks:/opt/project/notebooks \
@@ -28,13 +41,12 @@ docker run --rm -p 8888:8888 \
 # → http://localhost:8888
 ```
 
-Or point at the shared `mekong-infra` Docker Compose stack which includes a `jupyter` service.
-
 ## Rules
 
 - **Never write back to MinIO** — notebooks are read-only consumers.
 - **No cell outputs committed** — enforced by the `nbstripout` pre-commit hook.
-- **Production logic** extracted from a notebook belongs in `mekong-jobs`, not here.
+- **Production logic** extracted from a notebook belongs in `mekong-jobs`,
+  not here.
 
 ## Pre-commit setup
 
@@ -45,8 +57,14 @@ pre-commit install
 
 ## Dependencies
 
-See `requirements.txt`. Install locally with:
+See `requirements.txt` for notebook-side packages (matplotlib, plotly, pandas,
+pyarrow, s3fs). Install locally with:
 
 ```bash
 pip install -r requirements.txt
 ```
+
+## Depends on
+
+- [`mekong-data-models`](https://github.com/davidhoang2406/mekong-data-models) — schemas + topic constants for reading
+- `mekong-infra` — running Kafka + MinIO stack
